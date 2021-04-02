@@ -40,7 +40,7 @@ const Auth = (props: AuthProps) => {
     return n
   })
 
-  console.log(flattenRoute)
+  // console.log(flattenRoute)
 
   const defaultRoute = flattenRoute.find((n) => n.isMenu && n.path && n.component !== NoPermission)
 

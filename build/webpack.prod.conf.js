@@ -1,6 +1,8 @@
 process.env.NODE_ENV = 'production'
 const fs = require('fs')
 const { merge } = require('webpack-merge')
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin')
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
@@ -18,12 +20,43 @@ const useTypeScript = fs.existsSync(paths.appTsConfig)
 const webpackConfigProd = merge(webpackConfigBase, {
   mode: 'production',
   // 兼容性, dev 中影响热更新
-  target: ['web', 'es5'],
+  // target: ['web', 'es5'],
   stats: {
     children: false, // 不输出子模块的打包信息
   },
   optimization: {
     minimize: true,
+    minimizer: [
+      // This is only used in production mode
+      new TerserPlugin({
+        terserOptions: {
+          parse: {
+            ecma: 8
+          },
+          compress: {
+            ecma: 5,
+            warnings: false,
+            comparisons: false,
+            drop_debugger: true,
+            drop_console: true,
+            inline: 2
+          },
+          mangle: {
+            safari10: true
+          },
+          // keep_classnames: isEnvProductionProfile,
+          // keep_fnames: isEnvProductionProfile,
+          output: {
+            ecma: 5,
+            comments: false,
+            ascii_only: true
+          }
+        },
+        // sourceMap: shouldUseSourceMap
+      }),
+      // This is only used in production mode
+      new CssMinimizerPlugin()
+    ]
   },
   plugins: [
     new CleanWebpackPlugin(),
