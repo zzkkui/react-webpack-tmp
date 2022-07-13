@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders without crashing 1`] = `
+<Provider
+  store={
+    Object {
+      "dispatch": [Function],
+      "getState": [Function],
+      "replaceReducer": [Function],
+      "subscribe": [Function],
+      Symbol(observable): [Function],
+    }
+  }
+>
+  <BrowserRouter>
+    <div>
+      <Switch>
+        <Redirect
+          exact={true}
+          from="/"
+          to="/home"
+        />
+        <Route
+          component={[Function]}
+          exact={true}
+          path="/home"
+        />
+        <Route
+          component={[Function]}
+          exact={true}
+          path="/hello"
+        />
+      </Switch>
+    </div>
+  </BrowserRouter>
+</Provider>
+`;
