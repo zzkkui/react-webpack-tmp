@@ -1,64 +1,25 @@
-import React, { FC, useCallback, useEffect, useState } from 'react'
-import { BrowserRouter } from 'react-router-dom'
-import { Provider, useDispatch } from 'react-redux'
-import { ConfigProvider, Spin } from 'chopperui-react'
-import zhCN from 'chopperui-react/lib/locale/zh_CN'
-import 'chopperui-react/dist/chopperui-react.css'
-import moment from 'moment'
-import 'moment/locale/zh-cn'
-
+import React from 'react'
+import { Provider } from 'react-redux'
+import { ConfigProvider } from 'antd'
+import zhCN from 'antd/lib/locale/zh_CN'
+import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn'
 import store from 'src/store'
 
-// import routes from './route'
-import Layout from './layout/basicLayout'
-import { bindActionToPromise } from './utils'
-import { getPermissionInfo } from './store/actions/user'
+import './styles/index.less'
+import './global.less'
+import Routes from './route'
 
-moment.locale('zh-cn')
+dayjs.locale('zh-cn')
 
-const App: FC = () => {
-  const dispatch = useDispatch()
-  const [loading, setLoading] = useState(true)
-
-  const fetchPermissionList = useCallback(async () => {
-    await bindActionToPromise(dispatch, getPermissionInfo)()
-    setLoading(false)
-  }, [dispatch])
-
-  useEffect(() => {
-    fetchPermissionList()
-  }, [fetchPermissionList])
-
-  return (
-    <BrowserRouter>
-      <ConfigProvider locale={zhCN}>
-        {!loading ? (
-          <Layout />
-        ) : (
-          <Spin
-            spinning={loading}
-            style={{
-              width: '100%',
-              height: '564px',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            {/* <div style={{ width: '100%', height: '100vh' }}></div> */}
-          </Spin>
-        )}
-      </ConfigProvider>
-    </BrowserRouter>
-  )
-}
-
-const ProviderApp = () => {
+const App = () => {
   return (
     <Provider store={store}>
-      <App />
+      <ConfigProvider locale={zhCN}>
+        <Routes />
+      </ConfigProvider>
     </Provider>
   )
 }
 
-export default ProviderApp
+export default App

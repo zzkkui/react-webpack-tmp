@@ -10,7 +10,8 @@ function registerRoutes(app) {
   let mockLastIndex;
   const { default: mocks } = require('./index.js');
   const mocksForServer = mocks.map((route) => {
-    return responseFake(route.url, route.type, route.response);
+    const defaultTimeout = route.timeout ? route.timeout : 0
+    return responseFake(route.url, route.type, route.response, defaultTimeout);
   });
   for (const mock of mocksForServer) {
     app[mock.type](mock.url, mock.response);
@@ -31,21 +32,33 @@ function unregisterRoutes() {
   });
 }
 
+function timer(time) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve()
+    }, time)
+  })
+}
+
 // for mock server
-const responseFake = (url, type, respond) => {
+const responseFake = (url, type, respond, timeout) => {
   return {
     url: new RegExp(`${url}`),
     type: type || 'get',
     response(req, res) {
       console.log('request invoke:' + req.path);
-      res.json(Mock.mock(respond instanceof Function ? respond(req, res) : respond));
+      timer(timeout).then(() => {
+        res.json(Mock.mock(respond instanceof Function ? respond(req, res) : respond));
+      })
     },
   };
 };
 
 module.exports = (app) => {
   // es6 polyfill
-  require('@babel/register');
+  require('@babel/register')({
+    presets: ['@babel/preset-env']
+  })
 
   // parse app.body
   // https://expressjs.com/en/4x/api.html#req.body

@@ -1,4 +1,0 @@
-export const SET_HIDEHEADER = 'SET_HIDEHEADER'
-export const SET_COLLAPSED = 'SET_COLLAPSED'
-
-export const SET_COMMON_DATA = 'SET_COMMON_DATA'

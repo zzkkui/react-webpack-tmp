@@ -1,5 +1,5 @@
 import React, { FC } from 'react'
-import { Icon } from 'chopperui-react'
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'
 import styles from './style/collapseBtn.less'
 
 interface CollapseBtnProps {
@@ -15,11 +15,9 @@ const CollapseBtn: FC<CollapseBtnProps> = (props: CollapseBtnProps) => {
   }
   return (
     <div className={styles.btnBox} onClick={handleClick}>
-      {collapse ? <Icon type="menu-fold" /> : <Icon type="menu-unfold" />}
+      {collapse ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
     </div>
   )
 }
-
-CollapseBtn.displayName = 'CollapseBtn'
 
 export default CollapseBtn

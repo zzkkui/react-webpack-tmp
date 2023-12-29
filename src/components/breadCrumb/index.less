@@ -1,32 +1,82 @@
-.breadCrumb {
-  .goBack {
-    display: inline-block;
-    vertical-align: middle;
+.breadcrumbWrapper {
+  display: flex;
+  align-items: center;
+  height: 50px;
+  width: 100%;
+  &.hideSide {
+    padding-left: 50px;
+    height: 60px;
   }
-  .btnLine {
-    display: inline-block;
+  .btn {
+    font-size: 14px;
+    margin: 0 15px 0 0;
+    width: 50px;
+    line-height: 20px;
     vertical-align: middle;
-    width: 1px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .icon {
+    width: 3px;
     height: 14px;
-    background: #979797;
-    margin: 0 10px;
-    margin: 0 8px;
-  }
-  .path {
-    display: inline-block;
+    margin-right: 8px;
+    line-height: 20px;
     vertical-align: middle;
-    i {
-      margin: 0 8px;
-      vertical-align: middle;
-    }
-    .name {
-      color: #3c3c3c;
-      vertical-align: middle;
-    }
+    background: #5582f3;
   }
-  :global {
-    .ant-btn {
-      padding: 0;
+  .breadcrumb {
+    flex: 1;
+    // margin-top: -2px;
+    :global(.ant-breadcrumb) {
+      > span:first-child::before {
+        display: none;
+      }
+      > span {
+        vertical-align: middle;
+      }
+      > span:first-child {
+        color: #000;
+      }
+    }
+    :global {
+      .ant-breadcrumb {
+        li {
+          line-height: 27px;
+          .ant-breadcrumb-link {
+            cursor: pointer;
+            line-height: 27px;
+            display: block;
+            height: 100%;
+            &:hover,
+            &:focus {
+              a {
+                color: #5582f3;
+              }
+            }
+            .text-overflow {
+              max-width: 300px;
+              display: block;
+              height: 100%;
+            }
+          }
+          &:last-child {
+            .ant-breadcrumb-link {
+              cursor: initial;
+              &:hover,
+              &:focus {
+                cursor: initial;
+                color: inherit;
+                a {
+                  background: none;
+                }
+              }
+            }
+          }
+        }
+        .ant-breadcrumb-separator {
+          margin: 0 5px;
+        }
+      }
     }
   }
 }

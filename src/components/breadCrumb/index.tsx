@@ -1,69 +1,61 @@
-import { StoreType } from 'src/store/types'
-import { useShallowEqualSelector } from 'src/utils/hooks'
-import { Icon, Button } from 'chopperui-react'
-
 import React from 'react'
+import { Breadcrumb, Button } from 'antd'
+import { LeftOutlined } from '@ant-design/icons'
 import { useHistory } from 'react-router'
-
+import { useAppSelector } from 'src/hooks/reduxStore'
 import styles from './index.less'
+import { BreadCrumbType } from 'src/store/common'
 
-function CustBreadCrumb() {
-  const { breadCrumbs } = useShallowEqualSelector((state: StoreType) => {
-    return { breadCrumbs: state.common.breadCrumbs }
-  })
+type CusBreadcrumbPropsType = {
+  breadCrumbs?: BreadCrumbType
+}
+
+const CusBreadcrumb = (props: CusBreadcrumbPropsType) => {
   const history = useHistory()
-  const { paths, prev } = breadCrumbs
 
-  const handleGoBack = () => {
-    history.push(prev!)
+  const { breadCrumbs: storeBreadCrumbs } = useAppSelector((state) => ({
+    breadCrumbs: state.common.breadCrumbs,
+  }))
+
+  const { breadCrumbs: propsBreadCrumbs } = props
+
+  const { prev, hideBackBtn = false, paths } = propsBreadCrumbs || storeBreadCrumbs || ({} as BreadCrumbType)
+
+  const handleBack = () => {
+    history.push(prev)
   }
 
-  const handleGo = (path?: string) => {
-    if (path) {
-      history.push(path)
-    }
-  }
-
-  // console.log(breadCrumbs)
   return (
-    <div className={styles.breadCrumb}>
-      {prev ? (
-        <>
-          <span className={styles.goBack}>
-            <Button type="link" onClick={handleGoBack}>
-              返回上一级
-            </Button>
-          </span>
-          <span className={styles.btnLine}></span>
-        </>
+    <div className={styles.breadcrumbWrapper}>
+      {!hideBackBtn && prev ? (
+        <Button className={styles.btn} type="link" onClick={handleBack}>
+          <LeftOutlined />
+          返回
+        </Button>
       ) : null}
-      {paths?.map((n, i) => {
-        return (
-          <span className={styles.path} key={n.name}>
-            {n.path ? (
-              <Button type="link" onClick={() => handleGo(n.path)}>
-                {n.name}
-              </Button>
-            ) : (
-              <span className={styles.name}>{n.name}</span>
-            )}
-
-            {i === paths.length - 1 ? null : <Icon type="right" style={{ fontSize: '12px', color: '#3c3c3c' }} />}
-          </span>
-        )
-      })}
-
-      {/* <span className="root-cube">
-        <v-button
-          type="text"
-          @click="handleGoBack">应用</v-button>
-        <v-icon
-          type="ios-arrow-right"
-          color="#3C3C3C"></v-icon>
-        <span className="root-txt">详情</span>
-      </span> */}
+      <span className={styles.icon} />
+      <div className={styles.breadcrumb}>
+        <Breadcrumb separator=">">
+          {paths?.map((item, index, arr) => {
+            const { name, path } = item
+            return name ? (
+              <Breadcrumb.Item key={name}>
+                {index !== arr.length - 1 && path ? (
+                  <a className="text-overflow" onClick={() => history.push(path!)} title={name}>
+                    {name}
+                  </a>
+                ) : (
+                  <span className="text-overflow" title={name}>
+                    {name}
+                  </span>
+                )}
+              </Breadcrumb.Item>
+            ) : null
+          })}
+        </Breadcrumb>
+      </div>
     </div>
   )
 }
 
-export default React.memo(CustBreadCrumb)
+export default CusBreadcrumb

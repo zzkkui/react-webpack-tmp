@@ -8,6 +8,7 @@
       "esnext",
       "dom"
     ],
+    "noEmit": true,
     "skipLibCheck": true,
     "allowJs": true,
     "resolveJsonModule": true,
@@ -31,14 +32,15 @@
   },
   "exclude": [
     "node_modules",
-    "build",
     "dist",
-    "webpack",
-    "jest",
     "public",
     "mocks"
   ],
   "include": [
-    "src"
+    "src",
+    "build",
+    "./.eslintrc.js",
+    "./postcss.config.js",
+    "./babel.config.js"
   ]
 }

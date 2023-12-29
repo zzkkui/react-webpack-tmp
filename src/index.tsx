@@ -3,9 +3,14 @@ import 'react-app-polyfill/ie11'
 import 'react-app-polyfill/stable'
 import React from 'react'
 import ReactDOM from 'react-dom'
+import { ClickToComponent } from 'click-to-react-component'
 import 'normalize.css/normalize.css'
-import './styles/index.less'
-import './global.less'
 import App from './App'
 
-ReactDOM.render(<App />, document.getElementById('root'))
+ReactDOM.render(
+  <>
+    <ClickToComponent editor="vscode-insiders" />
+    <App />
+  </>,
+  document.getElementById('root'),
+)

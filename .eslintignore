@@ -1,6 +1,3 @@
 /lambda/
-/build
-/config
-mocks/mock-server.js
 .history
 /mocks/

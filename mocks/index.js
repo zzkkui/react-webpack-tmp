@@ -1,5 +1,5 @@
-import init from './initData';
+import common from './common';
 
-const mocks = [...init];
+const mocks = [...common];
 
 export default mocks;

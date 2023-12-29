@@ -1,10 +1,19 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios'
+import axios, {
+  AxiosError,
+  AxiosResponse,
+  AxiosRequestConfig,
+  //  InternalAxiosRequestConfig
+} from 'axios'
 import Qs from 'qs'
-import { message } from 'chopperui-react'
+import { message } from 'antd'
+import { isPlainObject } from '@reduxjs/toolkit'
+import { dropInvalidValue } from './handleData'
 
-interface AxiosConfig extends AxiosRequestConfig {
+export interface AxiosConfig extends AxiosRequestConfig {
   enableFormData?: boolean
   enableJSON?: boolean
+  timeout?: number
+  // headers: AxiosRequestHeaders
   [propName: string]: any
 }
 
@@ -12,81 +21,34 @@ export type DataType = {
   data?: any
   errcode?: number
   description?: string
-  // eslint-disable-next-line camelcase
   description_cn?: string
 }
 
 export type RequestHandlerReturn = Promise<DataType>
-export type RequestHandler = (url: string, data?: any, timeout?: number) => RequestHandlerReturn
-// export type InnerRequestHandler = (url: string, data?: any, timeout?: number) => Promise<InnerAxiosResponse>
+export type RequestHandler = (url: string, data?: any, config?: AxiosConfig) => RequestHandlerReturn
 
 interface selfParams {
   params?: any
   timeout?: number
 }
 
-// remove all invalid value
-// {a:1,b:null} => {a:1}
-// {a:1,b:[null,1]} => {a:1,b:[1]}
-// {a:1,b:[]} => {a:1,b:[]}
-export function dropInvalidValue(items: any) {
-  // 如果item就是一个值，判断是否应该保留
-  if (items === null || items === undefined || items === '') {
-    return null
-  }
-  if (items instanceof File) {
-    // 是文件对象，直接返回不做处理
-    return items
-  }
-  if (typeof items === 'object') {
-    // 如果是对象，需要进一步处理
-    if (Array.isArray(items)) {
-      const result: Array<any> = []
-      items.forEach((item) => {
-        const ret: any = dropInvalidValue(item)
-        if (ret !== null) {
-          result.push(ret)
-        }
-      })
-      return result
-    }
-    if (Object.keys(items).length > 0) {
-      const result: Record<string, any> = {}
-      // 非数组
-      Object.keys(items).forEach((key) => {
-        const ret = dropInvalidValue(items[key])
-        if (ret !== null) {
-          result[key] = ret
-        }
-      })
-      return result
-    }
-    return items
-  }
-  return items
-}
 // 以表单形式提交数据，目前仅支持一级操作
-export function dataToFormData(data: any) {
-  if (data) {
-    const ret = new FormData()
-    Object.keys(data).forEach((key) => {
-      const obj = data[key]
-      if (Array.isArray(obj)) {
-        // 是数组
-        obj.forEach((target, index) => {
-          // FormData 实例方法
-          ret.append(`${key}[${index}]`, target)
-        })
-      } else {
-        ret.append(key, obj)
-      }
-    })
-    return ret
-  } else {
-    console.error(`FormData has no data`)
-    return false
-  }
+function dataToFormData(data: Record<string, any>) {
+  const res = new FormData()
+  Object.keys(data).forEach((key) => {
+    const obj = data[key]
+    if (Array.isArray(obj)) {
+      obj.forEach((target, index) => {
+        // FormData 实例方法
+        res.append(`${key}[${index}]`, target)
+      })
+    } else {
+      res.append(key, obj)
+    }
+  })
+  return res
 }
+
 // 格式化请求的数据，默认使用
 export function formatRequestData(config: AxiosConfig) {
   const axiosConfig = config
@@ -94,9 +56,13 @@ export function formatRequestData(config: AxiosConfig) {
     // 去掉无效值
     const data = dropInvalidValue(config.data)
     if (config.enableFormData) {
-      // 强制使用formData提交，如文件上传
-      const resData = dataToFormData(data)
-      resData && (axiosConfig.data = resData)
+      if (isPlainObject(data)) {
+        // 强制使用formData提交，如文件上传
+        const resData = dataToFormData(data)
+        resData && (axiosConfig.data = resData)
+      } else {
+        console.error('error data type')
+      }
     } else if (config.enableJSON) {
       // 作为application/json提交
       axiosConfig.data = data
@@ -106,11 +72,12 @@ export function formatRequestData(config: AxiosConfig) {
   }
   return axiosConfig
 }
+
 let baseUrl = '/'
 if (process.env.NODE_ENV === 'production') {
   baseUrl = '/kme-web/'
 }
-const instance: AxiosInstance = axios.create({
+const instance = axios.create({
   baseURL: baseUrl,
   timeout: 10000,
   headers: {
@@ -120,39 +87,32 @@ const instance: AxiosInstance = axios.create({
   },
 })
 
-// 不能发送信号的请求
-// 'cicd/listjoblogs'
-// const blackList: string[] = []
 // 添加请求拦截器
-// let interceptorsId =
 instance.interceptors.request.use(
-  (config: AxiosConfig) => {
-    // 在发送请求之前做些什么
-    // let jump = true
-    // for (let i = 0, len = blackList.length; i < len; i++) {
-    //   if (!config) break
-    //   if (config?.url?.includes(blackList[i])) {
-    //     jump = false
-    //     break
-    //   }
-    // }
-    // if (jump) {
-    //   window.parent.postMessage('requesting', '*')
-    // }
-    return Promise.resolve(formatRequestData(config))
+  (config) => {
+    // axios bug
+    // return formatRequestData(config) as InternalAxiosRequestConfig
+    return formatRequestData(config)
   },
   (error: AxiosError) => {
-    // 对请求错误做些什么
     return Promise.reject(error)
   },
 )
 
-// instance.interceptors.request.eject(interceptorsId);
 instance.interceptors.response.use(
   (res: AxiosResponse) => {
     return Promise.resolve(res)
   },
   (err: AxiosError) => {
+    // axios v0.2.* 版本取消请求后的状态
+    //  __CANCEL__ 在其原型链上没有导出类型 (axios v1 版本也有)
+    if ((err as any).__CANCEL__) {
+      return Promise.reject(new Error('canceled'))
+    }
+    // // axios v1 版本取消请求后的状态
+    // if (err.code === 'ERR_CANCELED') {
+    //   return Promise.reject(err.message)
+    // }
     if (err && err.response) {
       switch (err.response.status) {
         case 400:
@@ -194,90 +154,135 @@ instance.interceptors.response.use(
     } else {
       err.message = '连接服务器失败!'
     }
-    if (!err.config.url?.startsWith('/login')) {
+    if (!err.config?.url?.startsWith('/login')) {
       message.error(err.message)
     }
     return Promise.reject(err.message)
   },
 )
 
-const get: RequestHandler = (url, data, timeout) => {
-  const params: selfParams = {}
+const get: RequestHandler = (url, data, config) => {
+  const params: selfParams = { ...config }
+  if (data) {
+    params.params = data
+  }
+  return instance.get(url, params)
+}
+
+const post: RequestHandler = (url, data, config) => {
+  const instanceConfig: AxiosConfig = {
+    // 默认格式
+    enableFormData: true,
+  }
+
+  if (config) {
+    const { timeout, enableJSON, params } = config
+    timeout && (instanceConfig.timeout = timeout)
+    params && (instanceConfig.params = params)
+    if (enableJSON) {
+      instanceConfig.enableJSON = true
+      instanceConfig.enableFormData = false
+    }
+  }
+
+  return instance.post(url, data, instanceConfig)
+}
+
+const put: RequestHandler = (url, data, config) => {
+  const instanceConfig: AxiosConfig = {
+    enableFormData: true,
+  }
+
+  if (config) {
+    const { timeout, enableJSON, params } = config
+    timeout && (instanceConfig.timeout = timeout)
+    params && (instanceConfig.params = params)
+    if (enableJSON) {
+      instanceConfig.enableJSON = true
+      instanceConfig.enableFormData = false
+    }
+  }
+
+  return instance.put(url, data, instanceConfig)
+}
+
+const deleteFn: RequestHandler = (url, data, config) => {
+  const params: selfParams = { ...config }
   if (data) {
     params.params = data
   }
 
-  if (timeout) {
-    params.timeout = timeout
-  }
-
-  if (url.startsWith('/login')) {
-    return instance.get(url, params).catch((err) => {
-      return err
-    })
-  } else {
-    return instance.get(url, params)
-  }
+  return instance.delete(url, params)
 }
 
-const post: RequestHandler = (url, data, timeout) => {
-  // data = Qs.stringify(data)
-
-  const config = {
-    timeout,
-    enableJSON: true,
-  }
-
-  return instance.post(url, data, config)
-}
-
-const put: RequestHandler = (url, data, timeout) => {
-  // data = Qs.stringify(data)
-
-  const config = {
-    timeout,
-    enableJSON: true,
-  }
-
-  return instance.put(url, data, config)
-}
-
-const getApi: RequestHandler = (url, data, timeout) => {
-  return new Promise((resolve) => {
-    get(url, data, timeout)
+const getApi: RequestHandler = (url, data, config) => {
+  return new Promise((resolve, reject) => {
+    get(url, data, config)
       .then((response) => {
         resolve(response.data)
       })
       .catch((err) => {
-        // console.log(url)
-        console.log(err)
-        // reject(err)
+        if (axios.isCancel(err)) {
+          return new Promise(() => {
+            //
+          })
+        }
+        reject(err)
       })
   })
 }
 
-const postApi: RequestHandler = (url, data, timeout) => {
-  return new Promise((resolve) => {
-    post(url, data, timeout)
+const postApi: RequestHandler = (url, data, config) => {
+  return new Promise((resolve, reject) => {
+    post(url, data, config)
       .then((response) => {
         resolve(response.data)
       })
       .catch((err) => {
-        console.log(err)
-        // reject(err)
+        if (axios.isCancel(err)) {
+          return new Promise(() => {
+            //
+          })
+        }
+        reject(err)
       })
   })
 }
 
-const putApi: RequestHandler = (url, data, timeout) => {
-  return new Promise((resolve) => {
-    put(url, data, timeout)
+const putApi: RequestHandler = (url, data, config) => {
+  return new Promise((resolve, reject) => {
+    put(url, data, config)
       .then((response) => {
         resolve(response.data)
       })
       .catch((err) => {
-        console.log(err)
-        // reject(err)
+        if (axios.isCancel(err)) {
+          return new Promise(() => {
+            //
+          })
+        }
+        reject(err)
+      })
+  })
+}
+
+const deleteApi: RequestHandler = (url, data, config) => {
+  return new Promise((resolve, reject) => {
+    deleteFn(url, data, config)
+      .then((response) => {
+        if (response) {
+          resolve(response.data)
+        } else {
+          resolve(response)
+        }
+      })
+      .catch((err) => {
+        if (axios.isCancel(err)) {
+          return new Promise(() => {
+            //
+          })
+        }
+        reject(err)
       })
   })
 }
@@ -288,4 +293,5 @@ export default {
   getApi,
   postApi,
   putApi,
+  deleteApi,
 }
