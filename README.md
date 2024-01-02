@@ -1,5 +1,7 @@
 ## boa-cli
 
+** dev-vite 是 vite（5） 版本 **
+
 ### 开发环境
 
 `node 16+`
